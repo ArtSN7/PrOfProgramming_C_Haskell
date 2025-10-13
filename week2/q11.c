@@ -26,7 +26,6 @@ bool isPrime(int n)
 
 void squaresNum()
 {
-    int count = 0;
     for (int i = 1; i <= 100; i++)
     {
         printf("%d * %d = %d\n", i, i, i * i);
@@ -35,7 +34,6 @@ void squaresNum()
 
 void squaredEvenNum()
 {
-    int count = 0;
     for (int i = 1; i <= 100; i++)
     {
         if (i % 2 == 0)
@@ -44,6 +42,8 @@ void squaredEvenNum()
         }
     }
 }
+
+
 
 
 int main(void){
