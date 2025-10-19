@@ -2,8 +2,6 @@
 #include <math.h>
 #include <stdbool.h>
 
-
-
 bool isPrime(int n)
 {
     // Numbers less than 2 are not prime
@@ -43,11 +41,8 @@ void squaredEvenNum()
     }
 }
 
-
-
-
-int main(void){
-
+int main(void)
+{
 
     squaresNum();
     squaredEvenNum();
