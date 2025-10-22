@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "algorithm": "c",
+        "ios": "c",
+        "locale": "c",
+        "ratio": "c",
+        "__hash_table": "c"
+    }
+}

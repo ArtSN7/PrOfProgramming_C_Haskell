@@ -40,20 +40,6 @@ static void initial_draw(Arena arena, Robot robot, DisplayConfig display)
     robot_draw(robot, display);
 }
 
-// Function used to show completion message
-static void show_completion(Robot robot, Arena arena)
-{
-    char msg[100];
-
-    // Check if all markers were collected
-    if (markerCount(&robot) == arena.number_of_presents)
-    {
-        sprintf(msg, "Mission Complete! Collected %d markers", markerCount(&robot));
-    }
-
-    message(msg);
-}
-
 // Print information on arguments passed to the program
 static void print_usage(char *program_name)
 {
@@ -142,8 +128,5 @@ int main(int argc, char *argv[])
 
     // Run robot-movement-logic
     robot_explore_all(&robot, &arena, display);
-
-    show_completion(robot, arena);
-
     return 0;
 }

@@ -19,7 +19,7 @@ static Position find_random_free_position(Arena *arena)
     return pos;
 }
 
-//Create robot at random free position
+// Create robot at random free position
 Robot robot_create(Arena *arena)
 {
     Robot robot = {
@@ -28,7 +28,6 @@ Robot robot_create(Arena *arena)
         .picked_markers = 0};                    // Start with no markers
     return robot;
 }
-
 
 /**
  * Calculate the position robot would move to if going forward
@@ -58,7 +57,6 @@ Position robot_get_next_position(Robot *robot)
     return next;
 }
 
-
 /**
  * Move robot forward one tile in current direction
  * Only moves if next position is valid (in bounds and not obstacle)
@@ -73,12 +71,6 @@ void forward(Robot *robot, Arena *arena)
     {
         robot->pos = next; // Move robot
     }
-}
-
-// Turns below
-void left(Robot *robot)
-{
-    robot->direction = (robot->direction + 3) % 4;
 }
 
 void right(Robot *robot)
@@ -143,14 +135,13 @@ int markerCount(Robot *robot)
     return robot->picked_markers;
 }
 
-
 // Draw robot
 static void draw_robot_body(Position pos, int cell_size, int offset_x, int offset_y)
 {
     // Calculate center of robot's cell
     int center_x = offset_x + pos.x * cell_size + cell_size / 2;
     int center_y = offset_y + pos.y * cell_size + cell_size / 2;
-    int radius = cell_size / 3; 
+    int radius = cell_size / 3;
     setColour(blue);
     fillOval(center_x - radius, center_y - radius, radius * 2, radius * 2);
 }
@@ -207,94 +198,103 @@ void robot_draw(Robot robot, DisplayConfig display)
 static void redraw_scene(Arena arena, Robot robot, DisplayConfig display)
 {
     foreground(); // Select foreground layer
-    clear();      // Clear previous frame
+    clear();
 
-    // Draw current state: markers and robot
+    // Draw markers and robot
     arena_draw_foreground(arena, display);
     robot_draw(robot, display);
 }
 
+static void final_scene(Arena arena, Robot robot, DisplayConfig display)
+{
+    foreground(); // Select foreground layer
+    clear();
+
+    robot_draw(robot, display);
+    sleep(400); // pause to show robot at final position
+    arena_draw_foreground(arena, display);
+}
+
 /**
- * Depth-First Search exploration algorithm
- * Systematically visits all reachable cells, collecting markers
- *
- * Algorithm:
- * 1. Mark current cell as visited
- * 2. Pick up marker if present
- * 3. Try all 4 directions:
+ * Idea:
+ *  Mark current cell as visited
+ *  Pick up marker if exists
+ *  Try all 4 directions:
  *    - Turn to face direction
- *    - If can move and haven't visited: move, recurse, backtrack
- * 4. Return (backtrack happens automatically via recursion)
+ *    - If can move and haven't visited: false, move, recurse, backtrack
+ *  Return true if all presents collected to stop any backtrack movement
  *
- * @param visited 2D array tracking which cells have been explored
+ * visited - 2D array tracking which cells have been explored
  */
-static void explore_dfs(Robot *robot, Arena *arena, int visited[][MAX_GRID_SIZE],
+static bool explore_dfs(Robot *robot, Arena *arena, int visited[][MAX_GRID_SIZE],
                         DisplayConfig display)
 {
     // Mark current cell as visited
     visited[robot->pos.y][robot->pos.x] = 1;
 
-    // Pick up marker if present
+    // Pick up marker if exists
     if (atMarker(robot, arena))
     {
         pickUpMarker(robot, arena);
         redraw_scene(*arena, *robot, display);
-        sleep(200); // Pause to show marker collection
+        sleep(200);
+
+        // DELETE BELOW IF YOU WANT ROBOT TO EXPLORE WHOLE GRID NO MATTER WHAT !!!!! Poor Electrical Thing if it was deleted
+        if (robot->picked_markers == arena->number_of_presents)
+        {
+            return true; // all markers collected
+        }
     }
 
-    // Try all four directions (up, right, down, left)
+    // Try all four directions
     for (int dir = 0; dir < 4; dir++)
     {
-        // Turn robot to face current direction
         while (robot->direction != dir)
         {
-            right(robot); // Keep turning right until facing desired direction
+            right(robot);
             redraw_scene(*arena, *robot, display);
-            sleep(50); // Pause to show rotation
+            sleep(150);
         }
 
-        // Calculate where robot would move
-        Position next = robot_get_next_position(robot);
-
-        // If can move and haven't visited that cell
-        if (arena_is_valid_position(next, arena) && !visited[next.y][next.x])
+        // Check if can move forward and haven't visited next cell
+        if (canMoveForward(robot, arena))
         {
-            // Move forward
-            forward(robot, arena);
-            redraw_scene(*arena, *robot, display);
-            sleep(50);
+            Position next = robot_get_next_position(robot);
 
-            // Recursively explore from new position
-            explore_dfs(robot, arena, visited, display);
-
-            // Backtrack: turn around and return to previous cell
-            right(robot);
-            right(robot); // 180 degree turn
-            redraw_scene(*arena, *robot, display);
-            sleep(50);
-
-            // Move back to previous cell
-            next = robot_get_next_position(robot);
-            if (arena_is_valid_position(next, arena))
+            if (!visited[next.y][next.x])
             {
+                // Save current position for backtracking
+                Position prev = robot->pos;
+
+                // Move forward
                 forward(robot, arena);
                 redraw_scene(*arena, *robot, display);
                 sleep(50);
+
+                // Recursively explore from new position
+                if (explore_dfs(robot, arena, visited, display))
+                {
+                    return true; // propagate completion up the stack
+                }
+
+                robot->pos = prev;
+                redraw_scene(*arena, *robot, display);
+                sleep(100);
             }
         }
     }
-    // Function returns, completing backtrack
+
+    return false; // didn't find all presents yet
 }
 
-/**
- * Entry point for exploration algorithm
- * Initializes visited array and starts DFS
- */
+// Entry point for exploration algorithm
 void robot_explore_all(Robot *robot, Arena *arena, DisplayConfig display)
 {
-    // Initialize visited array (all cells marked as unvisited)
     int visited[MAX_GRID_SIZE][MAX_GRID_SIZE] = {0};
 
-    // Start depth-first search from robot's current position
+    // Explore entire arena
     explore_dfs(robot, arena, visited, display);
+    sleep(500); // pause before dropping markers
+    dropMarker(robot, arena);
+    final_scene(*arena, *robot, display);
 }
