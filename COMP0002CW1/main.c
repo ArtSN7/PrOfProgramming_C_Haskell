@@ -5,21 +5,54 @@
 #include "graphics.h"
 
 /**
+ * Calculate optimal display configuration based on arena dimensions
+ * Ensures arena fits in a reasonable window size
+ */
+static DisplayConfig calculate_display_config(Arena arena)
+{
+    // Target window dimensions
+    const int MAX_WINDOW_WIDTH = 800;
+    const int MAX_WINDOW_HEIGHT = 800;
+    const int MIN_CELL_SIZE = 15;
+    const int MAX_CELL_SIZE = 50;
+    const int MARGIN = 100; // Space for borders and padding
+
+    DisplayConfig config;
+
+    // Calculate maximum cell size that fits in window
+    int max_cell_width = (MAX_WINDOW_WIDTH - MARGIN) / arena.width;
+    int max_cell_height = (MAX_WINDOW_HEIGHT - MARGIN) / arena.height;
+    
+    // Use smaller of the two to ensure it fits both dimensions
+    config.cell_size = (max_cell_width < max_cell_height) ? max_cell_width : max_cell_height;
+    
+    // Clamp cell size to reasonable range
+    if (config.cell_size < MIN_CELL_SIZE) config.cell_size = MIN_CELL_SIZE;
+    if (config.cell_size > MAX_CELL_SIZE) config.cell_size = MAX_CELL_SIZE;
+    
+    // Center the arena in the window
+    config.offset_x = MARGIN / 2;
+    config.offset_y = MARGIN / 2;
+    
+    return config;
+}
+
+/**
  * Setup display window and draw background layer
  * Background contains static elements: grid, obstacles
  */
 static void setup_display(Arena arena, DisplayConfig display)
 {
-    setWindowSize(arena.width * display.cell_size + 100,
-                  arena.height * display.cell_size + 100);
+    setWindowSize(arena.width * display.cell_size + display.offset_x * 2,
+                  arena.height * display.cell_size + display.offset_y * 2);
 
     background();
     clear();
 
     // Fill entire window with white background
     setColour(white);
-    fillRect(0, 0, arena.width * display.cell_size + 100,
-             arena.height * display.cell_size + 100);
+    fillRect(0, 0, arena.width * display.cell_size + display.offset_x * 2,
+             arena.height * display.cell_size + display.offset_y * 2);
 
     // Draw arena grid and obstacles
     arena_draw_background(arena, display);
@@ -40,7 +73,7 @@ static void initial_draw(Arena arena, Robot robot, DisplayConfig display)
     robot_draw(robot, display);
 }
 
-// Print information on arguments passed to the program
+// Print information on arguments passed to the program if it fails
 static void print_usage(char *program_name)
 {
     fprintf(stderr, "Usage: %s <width> <height> <obstacles> <presents> <is_circular>\n", program_name);
@@ -118,7 +151,7 @@ int main(int argc, char *argv[])
 
     // Create objects
     Arena arena = arena_create(width, height, num_obstacles, num_presents, (bool)is_circular);
-    DisplayConfig display = {.cell_size = 30, .offset_x = 50, .offset_y = 50};
+    DisplayConfig display = calculate_display_config(arena);
     Robot robot = robot_create(&arena);
 
     // Setup graphics
@@ -128,5 +161,14 @@ int main(int argc, char *argv[])
 
     // Run robot-movement-logic
     robot_explore_all(&robot, &arena, display);
+    
+    // Show completion message on screen
+    foreground();
+    setColour(green);
+    setStringTextSize(24);
+    char completion_msg[100];
+    sprintf(completion_msg, "All %d presents collected!", num_presents);
+    drawString(completion_msg, display.offset_x, display.offset_y / 2);
+    
     return 0;
 }

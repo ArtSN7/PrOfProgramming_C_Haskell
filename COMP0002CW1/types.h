@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 
-#define MAX_GRID_SIZE 50    // Maximum dimensions for the arena grid
+#define MAX_GRID_SIZE 50   // Maximum dimensions for the arena grid
 #define GRID_FREE 0         // Cell value for free space
 #define GRID_OBSTACLE 1     // Cell value for obstacles
 #define GRID_MARKER 2       // Cell value for markers/presents to collect

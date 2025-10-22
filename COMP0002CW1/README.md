@@ -44,8 +44,8 @@ gcc -o program main.c arena.c robot.c graphics.c -I.
 ```
 
 ### Parameters
-- **width**: Width of the arena (1-50)
-- **height**: Height of the arena (1-50)
+- **width**: Width of the arena (1-20)
+- **height**: Height of the arena (1-20)
 - **num_obstacles**: Number of random obstacles (ignored if is_circular=1)
 - **num_presents**: Number of markers/presents for the robot to collect
 - **is_circular**: 0 for rectangular arena, 1 for circular arena with ring of obstacles
